@@ -21,6 +21,7 @@ import org.apache.commons.logging.LogFactory;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Class that communicates with BWA
@@ -234,7 +235,7 @@ public class Bwa implements Serializable {
     parameters.add(algorithm);
 
     if (!this.bwaArgs.isEmpty()) {
-      parameters.add(this.bwaArgs);
+      parameters.addAll(Arrays.asList(this.bwaArgs.split(" ")));
     }
 
     //The third parameter is the output file===================================================
