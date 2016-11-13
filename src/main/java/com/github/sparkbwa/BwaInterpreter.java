@@ -31,7 +31,10 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.storage.StorageLevel;
 import scala.Tuple2;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -46,7 +49,6 @@ public class BwaInterpreter {
   private SparkConf sparkConf;
   private JavaSparkContext ctx;
   private Configuration conf;
-  private JavaRDD<Tuple2<String, String>> dataRDD;
   private long totalInputLength;
   private long blocksize;
   private BwaOptions options;
@@ -90,11 +92,6 @@ public class BwaInterpreter {
       long lengthFile1 = cSummaryFile1.getLength();
       long lengthFile2 = 0;
 
-      if (!options.getInputPath2().isEmpty()) {
-        ContentSummary cSummaryFile2 = fs.getContentSummary(new Path(options.getInputPath()));
-        lengthFile2 = cSummaryFile2.getLength();
-      }
-
       // Total size. Depends on paired or single reads
       this.totalInputLength = lengthFile1 + lengthFile2;
       fs.close();
@@ -126,7 +123,7 @@ public class BwaInterpreter {
     }
   }
 
-  private JavaRDD<String> handleSingleReadsSorting() {
+  private JavaRDD<String> handleSingleReadsSorting(File inputFastq) {
     JavaRDD<String> readsRDD = null;
 
     long startTime = System.nanoTime();
@@ -134,7 +131,7 @@ public class BwaInterpreter {
     LOG.info("JMAbuin::Not sorting in HDFS. Timing: " + startTime);
 
     // Read the two FASTQ files from HDFS using the FastqInputFormat class
-    JavaPairRDD<Long, String> singleReadsKeyVal = loadFastq(this.ctx, this.options.getInputPath());
+    JavaPairRDD<Long, String> singleReadsKeyVal = loadFastq(this.ctx, inputFastq);
 
     // Sort in memory with no partitioning
     if ((options.getPartitionNumber() == 0) && (options.isSortFastqReads())) {
@@ -189,8 +186,65 @@ public class BwaInterpreter {
     return readsRDD;
   }
 
-  public static JavaPairRDD<Long, String> loadFastq(JavaSparkContext ctx, String pathToFastq) {
-    JavaRDD<String> fastqLines = ctx.textFile(pathToFastq);
+  public static ArrayList<File> getFilesInFolder(String pathToFolder) {
+    File folder = new File(pathToFolder);
+    File[] listOfFiles = folder.listFiles();
+
+    if (listOfFiles != null) {
+      ArrayList<File> fastqFiles = new ArrayList<>();
+
+      for (File file : listOfFiles) {
+        String fileName = file.getName().toLowerCase();
+        if (file.isDirectory() && !fileName.startsWith("sparkbwa")) {
+          ArrayList<File> filesInDir = getFilesInFolder(file.getPath());
+          if (filesInDir != null) {
+            fastqFiles.addAll(filesInDir);
+          }
+        }
+        else if (fileName.endsWith("fastq") || fileName.endsWith("fq")) {
+          fastqFiles.add(file);
+        }
+      }
+      return fastqFiles;
+    }
+
+    System.err.println(String.format("The folder: %s is either empty or was not found!", folder.getName()));
+    return null;
+  }
+
+  public static String removeExtenstion(String filepath) {
+    String ext = "fastq";
+    if (filepath.endsWith("fq")) {
+      ext = "fq";
+    }
+
+    return filepath.substring(0, filepath.length() - (ext.length()+1));
+  }
+
+  public static List<Tuple2<File, File>> pairFastqFiles(List<File> inputFastqFiles) {
+    HashMap<String, Tuple2<File, File>> fastqMapper = new HashMap<>();
+
+    for (File currFastqFile : inputFastqFiles) {
+      String fastqWithoutExt = removeExtenstion(currFastqFile.getPath());
+      String pairName = fastqWithoutExt.substring(0, fastqWithoutExt.length()-3);
+      Tuple2<File, File> newFastqPair;
+
+      if (fastqMapper.containsKey(pairName)) {
+        Tuple2<File, File> oldFastqPair = fastqMapper.get(pairName);
+        newFastqPair = new Tuple2<>(oldFastqPair._1, currFastqFile);
+
+      } else {
+        newFastqPair = new Tuple2<>(currFastqFile, null);
+      }
+
+      fastqMapper.put(pairName, newFastqPair);
+    }
+
+    return new ArrayList<>(fastqMapper.values());
+  }
+
+  public static JavaPairRDD<Long, String> loadFastq(JavaSparkContext ctx, File inputFastqFiles) {
+    JavaRDD<String> fastqLines = ctx.textFile(inputFastqFiles.getPath());
 
     // Determine which FASTQ record the line belongs to.
     JavaPairRDD<Long, Tuple2<String, Long>> fastqLinesByRecordNum = fastqLines.zipWithIndex().mapToPair(new FASTQRecordGrouper());
@@ -199,7 +253,7 @@ public class BwaInterpreter {
     return fastqLinesByRecordNum.groupByKey().mapValues(new FASTQRecordCreator());
   }
 
-  private JavaRDD<Tuple2<String, String>> handlePairedReadsSorting() {
+  private JavaRDD<Tuple2<String, String>> handlePairedReadsSorting(File inputFastq1, File inputFastq2) {
     JavaRDD<Tuple2<String, String>> readsRDD = null;
 
     long startTime = System.nanoTime();
@@ -207,8 +261,8 @@ public class BwaInterpreter {
     LOG.info("JMAbuin::Not sorting in HDFS. Timing: " + startTime);
 
     // Read the two FASTQ files from HDFS using the FastqInputFormat class
-    JavaPairRDD<Long, String> datasetTmp1 = loadFastq(this.ctx, options.getInputPath());
-    JavaPairRDD<Long, String> datasetTmp2 = loadFastq(this.ctx, options.getInputPath2());
+    JavaPairRDD<Long, String> datasetTmp1 = loadFastq(this.ctx, inputFastq1);
+    JavaPairRDD<Long, String> datasetTmp2 = loadFastq(this.ctx, inputFastq2);
     JavaPairRDD<Long, Tuple2<String, String>> pairedReadsRDD = datasetTmp1.join(datasetTmp2);
 
     datasetTmp1.unpersist();
@@ -271,17 +325,17 @@ public class BwaInterpreter {
    *
    * @author José M. Abuín
    */
-  private List<String> MapPairedBwa(Bwa bwa, JavaRDD<Tuple2<String, String>> readsRDD) {
+  private List<String> MapPairedBwa(Bwa bwa, JavaRDD<Tuple2<String, String>> readsRDD, File inputFile) {
     // The mapPartitionsWithIndex is used over this RDD to perform the alignment. The resulting sam filenames are returned
     return readsRDD
-        .mapPartitionsWithIndex(new BwaPairedAlignment(readsRDD.context(), bwa), true)
+        .mapPartitionsWithIndex(new BwaPairedAlignment(readsRDD.context(), bwa, inputFile), true)
         .collect();
   }
 
-  private List<String> MapSingleBwa(Bwa bwa, JavaRDD<String> readsRDD) {
+  private List<String> MapSingleBwa(Bwa bwa, JavaRDD<String> readsRDD, File inputFile) {
     // The mapPartitionsWithIndex is used over this RDD to perform the alignment. The resulting sam filenames are returned
     return readsRDD
-        .mapPartitionsWithIndex(new BwaSingleAlignment(readsRDD.context(), bwa), true)
+        .mapPartitionsWithIndex(new BwaSingleAlignment(readsRDD.context(), bwa, inputFile), true)
         .collect();
   }
 
@@ -295,33 +349,19 @@ public class BwaInterpreter {
     LOG.info("JMAbuin:: Starting BWA");
     Bwa bwa = new Bwa(this.options);
 
-    List<String> returnedValues;
-    if (bwa.isPairedReads()) {
-      JavaRDD<Tuple2<String, String>> readsRDD = handlePairedReadsSorting();
-      returnedValues = MapPairedBwa(bwa, readsRDD);
-    } else {
-      JavaRDD<String> readsRDD = handleSingleReadsSorting();
-      returnedValues = MapSingleBwa(bwa, readsRDD);
-    }
+    List<File> inputFiles = getFilesInFolder(this.options.getInputPath());
+    List<Tuple2<File, File>> pairedInputFiles = pairFastqFiles(inputFiles);
 
-    // In the case of use a reducer the final output has to be stored in just one file
-    for (String outputFile : returnedValues) {
-      LOG.info("JMAbuin:: SparkBWA:: Returned file ::" + outputFile);
-
-      //After the execution, if the inputTmp exists, it should be deleted
-      try {
-        if ((this.inputTmpFileName != null) && (!this.inputTmpFileName.isEmpty())) {
-          FileSystem fs = FileSystem.get(this.conf);
-
-          fs.delete(new Path(this.inputTmpFileName), true);
-
-          fs.close();
-        }
-
-      } catch (IOException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-        LOG.error(e.toString());
+    List<String> returnedValues = new ArrayList<>();
+    for (Tuple2<File, File> inputFileTuple : pairedInputFiles) {
+      File inputFile1 = inputFileTuple._1;
+      File inputFile2 = inputFileTuple._2;
+      if (inputFile1 != null && inputFile2 != null) {
+        JavaRDD<Tuple2<String, String>> readsRDD = handlePairedReadsSorting(inputFile1, inputFile2);
+        returnedValues.addAll(MapPairedBwa(bwa, readsRDD, inputFile1));
+      } else {
+        JavaRDD<String> readsRDD = handleSingleReadsSorting(inputFile1);
+        returnedValues.addAll(MapSingleBwa(bwa, readsRDD, inputFile1));
       }
     }
   }

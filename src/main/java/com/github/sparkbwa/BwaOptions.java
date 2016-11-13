@@ -34,20 +34,15 @@ public class BwaOptions {
   private boolean bwaswAlgorithm = false;
   private String bwaArgs = "";
 
-  private boolean pairedReads = true;
-  private boolean singleReads = false;
-
   private String indexPath = "";
   private String outputHdfsDir = "";
   private String inputPath = "";
-  private String inputPath2 = "";
   private boolean sortFastqReads = false;
   private boolean sortFastqReadsHdfs = false;
   private String correctUse =
       "spark-submit --class SparkBWA [Spark options] SparkBWA.jar [SparkBWA Options] Input.fastq [Input2.fastq] Output\n"
           + "\n\n"
           + "To set the Input.fastq - setInputPath(string)\n"
-          + "To set the Input2.fastq - setInputPath2(string)\n"
           + "To set the Output - setOutputPath(string)\n"
           + "The available SparkBWA options are: \n\n";
 
@@ -132,22 +127,6 @@ public class BwaOptions {
       if (cmd.hasOption("bwaArgs")) {
         bwaArgs = cmd.getOptionValue("bwaArgs");
       }
-
-      //We look if we want the paired or single algorithm
-      if (cmd.hasOption("reads")) {
-        if (cmd.getOptionValue("reads").equals("single")) {
-          pairedReads = false;
-          singleReads = true;
-        } else if (cmd.getOptionValue("reads").equals("paired")) {
-          pairedReads = true;
-          singleReads = false;
-        } else {
-          LOG.warn("Reads argument could not be found\nSetting it to default paired reads\n");
-          pairedReads = true;
-          singleReads = false;
-        }
-      }
-
       //Sorting input reads
       if (cmd.hasOption("sorting")) {
         if (cmd.getOptionValue("sorting").equals("hdfs")) {
@@ -174,10 +153,6 @@ public class BwaOptions {
       } else if (otherArguments.length == 2) {
         inputPath = otherArguments[0];
         outputPath = otherArguments[1];
-      } else if (otherArguments.length == 3) {
-        inputPath = otherArguments[0];
-        inputPath2 = otherArguments[1];
-        outputPath = otherArguments[2];
       }
 
     } catch (UnrecognizedOptionException e) {
@@ -342,42 +317,6 @@ public class BwaOptions {
   }
 
   /**
-   * Getter to know if the paired reads are going to be used
-   *
-   * @return A boolean value that indicates if paired reads are used
-   */
-  public boolean isPairedReads() {
-    return pairedReads;
-  }
-
-  /**
-   * Setter for the option of paired reads
-   *
-   * @param pairedReads Boolean value that indicates if the paired reads are going to be used or not
-   */
-  public void setPairedReads(boolean pairedReads) {
-    this.pairedReads = pairedReads;
-  }
-
-  /**
-   * Getter to know if the single reads are going to be used
-   *
-   * @return A boolean value that indicates if single reads are used
-   */
-  public boolean isSingleReads() {
-    return singleReads;
-  }
-
-  /**
-   * Setter for the option of single reads
-   *
-   * @param singleReads Boolean value that indicates if the single reads are going to be used or not
-   */
-  public void setSingleReads(boolean singleReads) {
-    this.singleReads = singleReads;
-  }
-
-  /**
    * Getter for the index path
    *
    * @return A String containing the path for the index
@@ -448,24 +387,6 @@ public class BwaOptions {
    */
   public void setPartitionNumber(int partitionNumber) {
     this.partitionNumber = partitionNumber;
-  }
-
-  /**
-   * Getter for the second of the FASTQ files
-   *
-   * @return A String with the path of the second of the FASTQ files
-   */
-  public String getInputPath2() {
-    return inputPath2;
-  }
-
-  /**
-   * Setter for the second of the FASTQ files
-   *
-   * @param inputPath2 A String with the path of the second of the FASTQ files
-   */
-  public void setInputPath2(String inputPath2) {
-    this.inputPath2 = inputPath2;
   }
 
   /**

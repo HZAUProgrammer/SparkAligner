@@ -42,14 +42,8 @@ public class Bwa implements Serializable {
   private boolean bwaswAlgorithm = false; // The option to use the BWASW algorithm
   private String bwaArgs = ""; // The args passed directly to bwa
 
-  //Paired or single reads
-  private boolean pairedReads = false;
-  private boolean singleReads = false;
-
   //Index path
   private String indexPath = "";
-  private String inputFile = "";
-  private String inputFile2 = "";
   private String outputFile = "";
   private String outputHdfsDir = "";
 
@@ -69,48 +63,8 @@ public class Bwa implements Serializable {
     this.bwaswAlgorithm = options.isBwaswAlgorithm();
 
     this.bwaArgs = options.getBwaArgs();
-
-    this.pairedReads = options.isPairedReads();
-    this.singleReads = options.isSingleReads();
-
     this.indexPath = options.getIndexPath();
     this.outputHdfsDir = options.getOutputPath();
-  }
-
-  /**
-   * Getter for the second of the input files
-   *
-   * @return A String containing the second FASTQ file name
-   */
-  public String getInputFile2() {
-    return inputFile2;
-  }
-
-  /**
-   * Setter for the second of the input files
-   *
-   * @param inputFile2 A String containing the second FASTQ file name
-   */
-  public void setInputFile2(String inputFile2) {
-    this.inputFile2 = inputFile2;
-  }
-
-  /**
-   * Getter for the first of the input files
-   *
-   * @return A String containing the first FASTQ file name
-   */
-  public String getInputFile() {
-    return inputFile;
-  }
-
-  /**
-   * Setter for the first of the input files
-   *
-   * @param inputFile A String containing the first FASTQ file name
-   */
-  public void setInputFile(String inputFile) {
-    this.inputFile = inputFile;
   }
 
   /**
@@ -193,44 +147,6 @@ public class Bwa implements Serializable {
   }
 
   /**
-   * Getter for the option of using the paired reads entries or not
-   *
-   * @return A boolean value that is true if paired reads are used or false otherwise
-   */
-  public boolean isPairedReads() {
-    return pairedReads;
-  }
-
-  /**
-   * Setter for the option of using paired reads or not
-   *
-   * @param pairedReads A boolean value that is true if the paired reads version is going to be used
-   *     or false otherwise
-   */
-  public void setPairedReads(boolean pairedReads) {
-    this.pairedReads = pairedReads;
-  }
-
-  /**
-   * Getter for the option of using the single reads entries or not
-   *
-   * @return A boolean value that is true if single reads are used or false otherwise
-   */
-  public boolean isSingleReads() {
-    return singleReads;
-  }
-
-  /**
-   * Setter for the option of using single reads or not
-   *
-   * @param singleReads A boolean value that is true if the single reads version is going to be used
-   *     or false otherwise
-   */
-  public void setSingleReads(boolean singleReads) {
-    this.singleReads = singleReads;
-  }
-
-  /**
    * Getter for the index path
    *
    * @return A String containing the index path
@@ -266,7 +182,7 @@ public class Bwa implements Serializable {
     this.outputHdfsDir = outputHdfsDir;
   }
 
-  private String[] parseParameters(int alnStep) {
+  private String[] parseParameters(int alnStep, String inputFile1, String inputFile2) {
     ArrayList<String> parameters = new ArrayList<String>();
 
     //The first parameter is always "bwa"======================================================
@@ -275,6 +191,11 @@ public class Bwa implements Serializable {
     //The second parameter is the algorithm election===========================================
     String algorithm = "";
 
+    boolean isPaired = true;
+    if (inputFile2 == null) {
+      isPaired = false;
+    }
+
     //Case of "mem" algorithm
     if (this.memAlgorithm && !this.alnAlgorithm && !this.bwaswAlgorithm) {
       algorithm = "mem";
@@ -282,7 +203,7 @@ public class Bwa implements Serializable {
     //Case of "aln" algorithm
     else if (!this.memAlgorithm && this.alnAlgorithm && !this.bwaswAlgorithm) {
       //Aln algorithm and paired reads
-      if (this.pairedReads) {
+      if (isPaired) {
         //In the two first steps, the aln option is used
         if (alnStep < 2) {
           algorithm = "aln";
@@ -293,7 +214,7 @@ public class Bwa implements Serializable {
         }
       }
       //Aln algorithm single reads
-      else if (this.singleReads) {
+      else if (!isPaired) {
         //In the first step the "aln" ins performed
         if (alnStep == 0) {
           algorithm = "aln";
@@ -321,9 +242,9 @@ public class Bwa implements Serializable {
 
     if (algorithm.equals("aln")) {
       if (alnStep == 0) {
-        parameters.add(this.inputFile + ".sai");
-      } else if (alnStep == 1 && this.pairedReads) {
-        parameters.add(this.inputFile2 + ".sai");
+        parameters.add(inputFile1 + ".sai");
+      } else if (alnStep == 1 && isPaired) {
+        parameters.add(inputFile2 + ".sai");
       }
     } else {
       // For all other algorithms the output is a SAM file.
@@ -331,40 +252,40 @@ public class Bwa implements Serializable {
     }
 
     //The fifth, the index path===============================================================
-    parameters.add(this.indexPath);
+    parameters.add(indexPath);
 
     //The sixth, the input files===============================================================
 
     //If the "mem" algorithm, we add the FASTQ files
     if (algorithm.equals("mem") || algorithm.equals("bwasw")) {
-      parameters.add(this.inputFile);
+      parameters.add(inputFile1);
 
-      if (this.pairedReads) {
-        parameters.add(this.inputFile2);
+      if (isPaired) {
+        parameters.add(inputFile2);
       }
     }
 
     //If "aln" aln step is 0 or 1, also FASTQ files
     else if (algorithm.equals("aln")) {
       if (alnStep == 0) {
-        parameters.add(this.inputFile);
-      } else if (alnStep == 1 && this.pairedReads) {
-        parameters.add(this.inputFile2);
+        parameters.add(inputFile1);
+      } else if (alnStep == 1 && isPaired) {
+        parameters.add(inputFile2);
       }
     }
 
     //If "sampe" the input files are the .sai from previous steps
     else if (algorithm.equals("sampe")) {
-      parameters.add(this.inputFile + ".sai");
-      parameters.add(this.inputFile2 + ".sai");
-      parameters.add(this.inputFile);
-      parameters.add(this.inputFile2);
+      parameters.add(inputFile1 + ".sai");
+      parameters.add(inputFile2 + ".sai");
+      parameters.add(inputFile1);
+      parameters.add(inputFile2);
     }
 
     //If "samse", only one .sai file
     else if (algorithm.equals("samse")) {
-      parameters.add(this.inputFile + ".sai");
-      parameters.add(this.inputFile);
+      parameters.add(inputFile1 + ".sai");
+      parameters.add(inputFile1);
     }
 
     String[] parametersArray = new String[parameters.size()];
@@ -377,9 +298,9 @@ public class Bwa implements Serializable {
    * @param alnStep An integer that indicates at with phase of the aln step the program is
    * @return A Strings array containing the options which BWA was launched
    */
-  public int run(int alnStep) {
+  public int run(int alnStep, String inputFile1, String inputFile2) {
     // Get obtain the list of arguments passed by the user
-    String[] parametersArray = parseParameters(alnStep);
+    String[] parametersArray = parseParameters(alnStep, inputFile1, inputFile2);
 
     // Call to JNI with the selected parameters
     int returnCode = BwaJni.Bwa_Jni(parametersArray);

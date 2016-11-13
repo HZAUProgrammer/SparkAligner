@@ -34,8 +34,8 @@ import java.util.Iterator;
 public class BwaPairedAlignment extends BwaAlignmentBase
     implements Function2<Integer, Iterator<Tuple2<String, String>>, Iterator<String>> {
 
-  public BwaPairedAlignment(SparkContext context, Bwa bwaInterpreter) {
-    super(context, bwaInterpreter);
+  public BwaPairedAlignment(SparkContext context, Bwa bwaInterpreter, File originInputFile) {
+    super(context, bwaInterpreter, originInputFile);
   }
 
   /**
@@ -46,8 +46,9 @@ public class BwaPairedAlignment extends BwaAlignmentBase
 
     // STEP 1: Input fastq reads tmp file creation
     LOG.info("JMAbuin:: Tmp dir: " + this.tmpDir);
-    String fastqFileName1 = this.tmpDir + this.appId + "-RDD" + arg0 + "_1";
-    String fastqFileName2 = this.tmpDir + this.appId + "-RDD" + arg0 + "_2";
+    String originInputFileName = BwaInterpreter.removeExtenstion(this.originInputFile.getName());
+    String fastqFileName1 = this.tmpDir + originInputFileName + "-" + this.appId + "-RDD" + arg0 + "_1";
+    String fastqFileName2 = this.tmpDir + originInputFileName + "-" + this.appId + "-RDD" + arg0 + "_2";
 
     LOG.info("JMAbuin:: Writing file: " + fastqFileName1);
     LOG.info("JMAbuin:: Writing file: " + fastqFileName2);

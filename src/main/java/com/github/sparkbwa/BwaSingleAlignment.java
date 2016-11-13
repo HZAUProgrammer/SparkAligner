@@ -26,8 +26,8 @@ import java.util.Iterator;
 public class BwaSingleAlignment extends BwaAlignmentBase
     implements Function2<Integer, Iterator<String>, Iterator<String>> {
 
-  public BwaSingleAlignment(SparkContext context, Bwa bwaInterpreter) {
-    super(context, bwaInterpreter);
+  public BwaSingleAlignment(SparkContext context, Bwa bwaInterpreter, File originInputFile) {
+    super(context, bwaInterpreter, originInputFile);
   }
 
   /**
@@ -37,7 +37,8 @@ public class BwaSingleAlignment extends BwaAlignmentBase
   public Iterator<String> call(Integer arg0, Iterator<String> arg1) throws Exception {
 
     LOG.info("JMAbuin:: Tmp dir: " + this.tmpDir);
-    String fastqFileName1 = this.tmpDir + this.appId + "-RDD" + arg0 + "_1";
+    String originInputFileName = BwaInterpreter.removeExtenstion(this.originInputFile.getName());
+    String fastqFileName1 = this.tmpDir + originInputFileName + "-" + this.appId + "-RDD" + arg0 + "_1";
 
     LOG.info("JMAbuin:: Writing file: " + fastqFileName1);
 
