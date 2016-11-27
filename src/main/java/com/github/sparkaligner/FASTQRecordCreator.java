@@ -1,13 +1,7 @@
-package com.github.sparkbwa;
+package com.github.sparkaligner;
 
-import com.clearspring.analytics.util.Lists;
-import org.apache.commons.collections.IteratorUtils;
 import org.apache.spark.api.java.function.Function;
 import scala.Tuple2;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.regex.Pattern;
 
 public class FASTQRecordCreator implements Function<Iterable<Tuple2<String, Long>>, String> {
     @Override
