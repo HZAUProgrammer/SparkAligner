@@ -4,7 +4,7 @@ SparkAligner is generalized version of [SparkBWA](https://github.com/citiususc/S
 support for modules. These modules can be used to add support for other aligners.
 
 The following aligners are currently supported:
-* bwa
+* [bwa](http://bio-bwa.sourceforge.net/bwa.shtml)
 
 ### Usage
 ```
