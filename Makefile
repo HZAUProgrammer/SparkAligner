@@ -10,7 +10,7 @@ RESOURCES_DIR = src/main/resources
 
 # Bwa variables ########
 BWA_DIR = lib/
-BWA = bwa-0.7.15
+BWA = bwa
 
 all: sparkaligner
 	@echo "================================================================================"
