@@ -28,8 +28,8 @@ bwa                                          \
 ```
 
 ### Building
-Make sure to clone the project using `git clone --recursive`, as BWA is
-a submodule.
+Make sure to clone the project using `git clone --recursive`, as it uses
+submodules.
 The JAR can be built by using `make`.
 
 ### Adding new modules
