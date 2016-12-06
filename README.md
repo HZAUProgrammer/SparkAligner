@@ -22,9 +22,9 @@ spark-submit                                 \
 sparkaligner.jar                             \
 bwa                                          \
 -algorithm mem                               \
--index /data/hg19/hg19.fasta                 \
+-R /data/hg19/hg19.fasta                 \
 -partitions 2                                \
-/data/input/datasets                         
+-I /data/input/datasets                         
 ```
 
 ### Building
