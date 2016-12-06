@@ -44,12 +44,8 @@ public class BwaOptions extends AlignerOptions {
         }
       }
 
-      if (cmd.hasOption("index")) {
-        setIndexPath(cmd.getOptionValue("index"));
-      } else {
-        this.LOG.error("No index has been found. Aborting.");
-        formatter.printHelp(correctUse, options, true);
-        System.exit(1);
+      if (cmd.hasOption("R")) {
+        setIndexPath(cmd.getOptionValue("R"));
       }
 
       if (cmd.hasOption("partitions")) {
@@ -60,19 +56,8 @@ public class BwaOptions extends AlignerOptions {
         setAlignerExtraArgs(cmd.getOptionValue("bwaArgs"));
       }
 
-      String otherArguments[] = cmd.getArgs(); // With this we get the rest of the arguments
-
-      if ((otherArguments.length != 2) && (otherArguments.length != 3)) {
-        this.LOG.error("No input and output has been found. Aborting.");
-
-        for (String tmpString : otherArguments) {
-          this.LOG.error("Other args:: " + tmpString);
-        }
-
-        formatter.printHelp(correctUse, options, true);
-        System.exit(1);
-      } else if (otherArguments.length == 2) {
-        setInputPath(otherArguments[0]);
+      if (cmd.hasOption("I")) {
+        setInputPath(cmd.getOptionValue("I"));
       }
 
     } catch (UnrecognizedOptionException e) {
@@ -101,7 +86,10 @@ public class BwaOptions extends AlignerOptions {
 
     Option index =
         new Option(
-            "index", true, "Prefix for the index created by bwa to use - setIndexPath(string)");
+            "R",
+            "reference",
+             true,
+             "Prefix for the index created by bwa to use - setIndexPath(string)");
     index.setArgName("Index prefix");
     options.addOption(index);
 
@@ -110,8 +98,16 @@ public class BwaOptions extends AlignerOptions {
             "partitions",
             true,
             "Number of partitions to divide input reads - setPartitionNumber(int)");
-    partitions.setArgName("Number of partitions");
     options.addOption(partitions);
+
+    Option inputFolder =
+            new Option(
+                    "I",
+                    "input",
+                    true,
+                    "The folder(s) containing the input files.");
+    partitions.setArgName("Input folder");
+    options.addOption(inputFolder);
 
     return options;
   }
