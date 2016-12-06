@@ -35,6 +35,12 @@ public abstract class BaseAligner implements Serializable {
         }
     }
 
+    public BaseAligner(JavaSparkContext sparkContext, String alignerName, AlignerOptions options) {
+        this.alignerName = alignerName;
+        this.options = options;
+
+        this.ctx = sparkContext;
+    }
 
     abstract public void alignReads(String fastqFileName1, String fastqFileName2);
 

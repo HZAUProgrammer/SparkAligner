@@ -1,6 +1,7 @@
 package com.github.sparkaligner.aligners.bwa;
 
 import com.github.sparkaligner.BaseAligner;
+import org.apache.spark.api.java.JavaSparkContext;
 
 import java.io.File;
 import java.io.Serializable;
@@ -9,6 +10,9 @@ public class Bwa extends BaseAligner implements Serializable {
 
   public Bwa(String args[]) {
     super("bwa", new BwaOptions(args));
+  }
+  public Bwa(JavaSparkContext sparkContext, String args[]) {
+    super(sparkContext, "bwa", new BwaOptions(args));
   }
 
   public void alignReads(String fastqFileName1, String fastqFileName2) {
