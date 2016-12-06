@@ -20,7 +20,8 @@ all: sparkaligner
 
 bwa:
 	$(MAKE) -C $(BWA_DIR)/$(BWA)
-	cp $(BWA_DIR)/$(BWA)/bwa $(RESOURCES_DIR)
+	if [ ! -d "$(RESOURCES_DIR)" ]; then mkdir $(RESOURCES_DIR); fi
+	cp $(BWA_DIR)/$(BWA)/bwa $(RESOURCES_DIR)/
 
 sparkaligner: bwa
 	mvn clean package
