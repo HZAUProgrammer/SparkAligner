@@ -27,7 +27,7 @@ public class MiscUtils {
             String fileName = chopped[chopped.length-1];
 
             // Create our temp file
-            File tempFile = File.createTempFile("SparkAligner" + System.nanoTime(), fileName, new File(""));
+            File tempFile = File.createTempFile("SparkAligner" + System.nanoTime(), fileName);
 
             // Delete the file on VM exit
             tempFile.deleteOnExit();
