@@ -115,7 +115,12 @@ public abstract class BaseAligner implements Serializable {
     protected JavaRDD<String> handleSingleReadsSorting(File inputFastq) {
         JavaPairRDD<Long, String> singleReadsKeyVal = loadFastq(this.ctx, inputFastq);
 
-        return singleReadsKeyVal.repartition(options.getPartitionNumber()).values();
+        int numPartitions = options.getPartitionNumber();
+        if (numPartitions <= 0) {
+            numPartitions = this.ctx.sc().getExecutorStorageStatus().length;
+        }
+
+        return singleReadsKeyVal.repartition(numPartitions).values();
     }
 
     protected JavaRDD<Tuple2<String, String>> handlePairedReadsSorting(File inputFastq1, File inputFastq2) {
@@ -124,7 +129,12 @@ public abstract class BaseAligner implements Serializable {
 
         JavaPairRDD<Long, Tuple2<String, String>> pairedReadsRDD = datasetTmp1.join(datasetTmp2);
 
-        return pairedReadsRDD.repartition(options.getPartitionNumber()).values();
+        int numPartitions = options.getPartitionNumber();
+        if (numPartitions <= 0) {
+            numPartitions = this.ctx.sc().getExecutorStorageStatus().length;
+        }
+
+        return pairedReadsRDD.repartition(numPartitions).values();
     }
 
     public int execute(int algorithmState, String inputFile1, String inputFile2) {
