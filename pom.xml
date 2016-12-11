@@ -6,7 +6,11 @@
 
     <groupId>com.github.sparkaligner</groupId>
     <artifactId>sparkaligner</artifactId>
-    <version>1.0.3</version>
+    <version>1.1.3</version>
+
+    <properties>
+        <bwaPath>./lib/</bwaPath>
+    </properties>
 
     <build>
         <plugins>
@@ -55,6 +59,43 @@
                     <source>1.8</source>
                     <target>1.8</target>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.1.1</version>
+                <executions>
+                    <execution>
+                        <id>makeBwa</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>make</executable>
+                            <arguments>
+                                <argument>-C</argument>
+                                <argument>${bwaPath}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>makeBwaClean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>make</executable>
+                            <arguments>
+                                <argument>clean</argument>
+                                <argument>-C</argument>
+                                <argument>${bwaPath}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
