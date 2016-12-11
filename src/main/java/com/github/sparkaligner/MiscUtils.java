@@ -49,6 +49,7 @@ public class MiscUtils {
             return tempFile.getAbsolutePath();
 
         } catch (IOException e) {
+            e.printStackTrace();
             return null;
         }
     }
