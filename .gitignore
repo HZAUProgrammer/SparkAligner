@@ -4,7 +4,7 @@ target
 *.sw*
 *.class
 .idea
-sparkbwa.iml
+*.iml
 sparkaligner_out
 src/main/resources/bwa
 lib/bwa-0.7.15/bwa
