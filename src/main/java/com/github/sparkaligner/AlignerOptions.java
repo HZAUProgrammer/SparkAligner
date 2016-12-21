@@ -1,5 +1,9 @@
 package com.github.sparkaligner;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -55,6 +59,17 @@ public abstract class AlignerOptions implements Serializable {
 
   protected String getOutputFile() {
     return this.outputFile;
+  }
+
+  protected CommandLine parseArguments(Options options, String args[]) {
+    CommandLineParser parser = new ExtendedGnuParser(true);
+    try {
+      return parser.parse(options, args);
+    } catch (ParseException e) {
+      e.printStackTrace();
+      System.exit(1);
+      return null;
+    }
   }
 
   abstract public ArrayList<String> generateParameters(int algorithmState, String inputFile1, String inputFile2);

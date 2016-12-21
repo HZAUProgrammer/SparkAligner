@@ -21,54 +21,41 @@ public class BwaOptions extends AlignerOptions {
 
     HelpFormatter formatter = new HelpFormatter();
 
-    CommandLineParser parser = new BasicParser();
-    CommandLine cmd;
-    try {
-      cmd = parser.parse(options, args);
+    CommandLine cmd = this.parseArguments(options, args);
 
-      //We look for the algorithm
-      if (cmd.hasOption("algorithm")) {
-        String algorithmArg = cmd.getOptionValue("algorithm");
+    if (cmd.hasOption("algorithm")) {
+      String algorithmArg = cmd.getOptionValue("algorithm");
 
-        if (algorithmArg.equals("mem")) {
-            algorithm = Algorithm.MEM;
-        } else if (algorithmArg.equals("aln")) {
-            algorithm = Algorithm.ALN;
-        } else if (cmd.getOptionValue("algorithm").equals("bwasw")) {
-            algorithm = Algorithm.BWASW;
-        } else {
-          this.LOG.warn(
-              "The algorithm "
-                  + algorithmArg
-                  + " could not be found\nSetting to default mem algorithm\n");
-        }
+      if (algorithmArg.equals("mem")) {
+        algorithm = Algorithm.MEM;
+      } else if (algorithmArg.equals("aln")) {
+        algorithm = Algorithm.ALN;
+      } else if (cmd.getOptionValue("algorithm").equals("bwasw")) {
+        algorithm = Algorithm.BWASW;
+      } else {
+        this.LOG.warn(
+                "The algorithm "
+                        + algorithmArg
+                        + " could not be found\nSetting to default mem algorithm\n");
       }
-
-      if (cmd.hasOption("R")) {
-        setIndexPath(cmd.getOptionValue("R"));
-      }
-
-      if (cmd.hasOption("partitions")) {
-        setPartitionNumber(Integer.parseInt(cmd.getOptionValue("partitions")));
-      }
-
-      if (cmd.hasOption("bwaArgs")) {
-        setAlignerExtraArgs(cmd.getOptionValue("bwaArgs"));
-      }
-
-      if (cmd.hasOption("I")) {
-        setInputPath(cmd.getOptionValue("I"));
-      }
-
-    } catch (UnrecognizedOptionException e) {
-      e.printStackTrace();
-      formatter.printHelp(correctUse, options, true);
-      System.exit(1);
-
-    } catch (ParseException e) {
-      e.printStackTrace();
-      System.exit(1);
     }
+
+    if (cmd.hasOption("R")) {
+      setIndexPath(cmd.getOptionValue("R"));
+    }
+
+    if (cmd.hasOption("partitions")) {
+      setPartitionNumber(Integer.parseInt(cmd.getOptionValue("partitions")));
+    }
+
+    if (cmd.hasOption("bwaArgs")) {
+      setAlignerExtraArgs(cmd.getOptionValue("bwaArgs"));
+    }
+
+    if (cmd.hasOption("I")) {
+      setInputPath(cmd.getOptionValue("I"));
+    }
+
   }
 
   public Options initOptions() {
