@@ -14,7 +14,7 @@ public class BwaOptions extends AlignerOptions {
 
   private Algorithm algorithm = Algorithm.MEM;
 
-  private String correctUse = "TODO: add this";
+  private String correctUse = "sparkaligner";
 
   public BwaOptions(String[] args) {
     Options options = this.initOptions();
