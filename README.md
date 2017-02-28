@@ -12,7 +12,7 @@ spark-submit                                 \
 --class com.github.sparkaligner.SparkAligner \
 sparkaligner.jar                             \
 <name of aligner to use>                     \
-[<aligner specific options>]                 
+[<aligner specific options>]
 ```
 
 Ex.
@@ -22,9 +22,40 @@ spark-submit                                 \
 sparkaligner.jar                             \
 bwa                                          \
 -algorithm mem                               \
--R /data/hg19/hg19.fasta                 \
+-R /data/hg19/hg19.fasta                     \
 -partitions 2                                \
--I /data/input/datasets                         
+-I /data/input/datasets
+```
+
+#### Running the provided Docker example
+The docker image can be built using
+```
+docker build --no-cache -t <name of Docker image> .
+```
+
+It can also be found
+[here](https://hub.docker.com/r/paalka/spark-aligner/).
+This docker image also downloads a test dataset (the Lambda phage dataset)
+from [f.128.no](http://f.128.no/genomics/test_data/)).
+
+```
+docker run                                                                   \
+-it                                                                          \
+-v <path to data folder>:<path to mount the data folder inside to container> \
+paalka/spark-aligner
+<regular spark-aligner arguments here>
+```
+
+In order to keep the SAM files, you need to mount the data directory to the
+container, ex:
+```
+docker run -it                             \
+-v <path to test data>:/test_data          \
+paalka/spark-aligner bwa                   \
+-algorithm mem                             \
+-R /data/reference/lambda_virus.fa         \
+-I /test_data/<test_data_folder>           \
+-partitions 2 -bwaArgs "-t 4"
 ```
 
 ### Building
